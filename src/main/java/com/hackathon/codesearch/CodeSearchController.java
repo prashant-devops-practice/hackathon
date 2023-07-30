@@ -9,50 +9,57 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("search")
 @CrossOrigin
 public class CodeSearchController {
-	
-	@GetMapping("/{searchString}")
+
 	@ResponseBody
-    public ApiResponse getBook(@PathVariable("searchString") String searchString) {
+	@GetMapping
+	public ApiResponse getBook(@RequestParam("keyword") String searchString, HttpServletRequest request) {
 		HttpHeaders headers = new HttpHeaders();
-		String url="https://api.bitbucket.org/2.0/workspaces/zoomdata/search/code?search_query="+searchString;
-		headers.add("Authorization", "Basic " + "cHJhc2hhbnRJbnNpZ2h0OkFUQkJ4eE00dlhrRHdtNGsyWGZKYzlTR3NrN2I0MTU2MURCRg==");
-		HttpEntity<SearchResponse> request = new HttpEntity<SearchResponse>(headers);
-		ResponseEntity<SearchResponse> response = new RestTemplate().exchange(url, HttpMethod.GET, request, SearchResponse.class);
-		SearchResponse searchResponse=response.getBody();
-		
-		ApiResponse apiResponse=new ApiResponse();
+		String url = "https://api.bitbucket.org/2.0/workspaces/zoomdata/search/code?search_query=" + searchString;
+		headers.add("Authorization",
+				"Basic " + "cHJhc2hhbnRJbnNpZ2h0OkFUQkJ4eE00dlhrRHdtNGsyWGZKYzlTR3NrN2I0MTU2MURCRg==");
+		HttpEntity<SearchResponse> request1 = new HttpEntity<SearchResponse>(headers);
+		ResponseEntity<SearchResponse> response = new RestTemplate().exchange(url, HttpMethod.GET, request1,
+				SearchResponse.class);
+		SearchResponse searchResponse = response.getBody();
+		String baseUrl = ServletUriComponentsBuilder.fromRequestUri(request).replacePath(null).build().toUriString();
+
+		String finalUrl = baseUrl + "/search/content?url=";
+		ApiResponse apiResponse = new ApiResponse();
 		apiResponse.setRepository("zoomdata");
-		List<Result> results=new ArrayList<Result>();
-		for (Values values:searchResponse.getValues()) {
-			 Result r=new Result();
-			 r.setLabel(values.getFile().getPath());
-			 r.setUrl(values.getFile().getLinks().getSelf().getHref());
-			 results.add(r);
+		List<Result> results = new ArrayList<Result>();
+		for (Values values : searchResponse.getValues()) {
+			Result r = new Result();
+			r.setLabel(values.getFile().getPath());
+			r.setUrl(finalUrl+values.getFile().getLinks().getSelf().getHref());
+			results.add(r);
 		}
 		apiResponse.setResults(results);
-        return apiResponse;
-    }
-	
-	 @PostMapping("/content")
-	 public String getContents(@RequestBody Content content) {
-			HttpHeaders headers = new HttpHeaders();
-			headers.add("Authorization", "Basic " + "cHJhc2hhbnRJbnNpZ2h0OkFUQkJ4eE00dlhrRHdtNGsyWGZKYzlTR3NrN2I0MTU2MURCRg==");
-			HttpEntity<String> request = new HttpEntity<String>(headers);
-			ResponseEntity<String> response = new RestTemplate().exchange(content.getUrl(), HttpMethod.GET, request, String.class);
-			return response.getBody();
-			
-	    }
+		return apiResponse;
+	}
+
+	@GetMapping("/content")
+	public String getContents(@RequestParam("url") String content) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Authorization",
+				"Basic " + "cHJhc2hhbnRJbnNpZ2h0OkFUQkJ4eE00dlhrRHdtNGsyWGZKYzlTR3NrN2I0MTU2MURCRg==");
+		HttpEntity<String> request1 = new HttpEntity<String>(headers);
+		ResponseEntity<String> response = new RestTemplate().exchange(content, HttpMethod.GET, request1,
+				String.class);
+		return response.getBody();
+
+	}
 
 }
