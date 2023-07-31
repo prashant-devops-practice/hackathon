@@ -25,7 +25,7 @@ public class CodeSearchController {
 
 	@ResponseBody
 	@GetMapping
-	public ApiResponse getBook(@RequestParam("keyword") String searchString, HttpServletRequest request) {
+	public ApiResponse getResult(@RequestParam("keyword") String searchString, HttpServletRequest request) {
 		HttpHeaders headers = new HttpHeaders();
 		String url = "https://api.bitbucket.org/2.0/workspaces/zoomdata/search/code?search_query=" + searchString;
 		headers.add("Authorization",
